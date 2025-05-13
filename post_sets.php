@@ -35,19 +35,24 @@ function post_sets_deactivate() {
 }
 
 // 0. Enqueue Scripts and Styles
-// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Used intentionally, acceptable for small datasets.
 function post_sets_scripts_styles() {
-    $posts = get_posts([
-        'meta_query' => [
-            [
-                'key' => '_content',
-                'value' => '[post_sets_menu]',
-                'compare' => 'LIKE'
-            ]
-        ]
-    ]);
+    // Use more efficient transient caching approach instead of meta_query
+    $has_shortcode = get_transient('post_sets_has_shortcode');
+    
+    if (false === $has_shortcode) {
+        global $wpdb;
+        $has_shortcode = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE %s LIMIT 1",
+                '%[post_sets_menu]%'
+            )
+        );
+        
+        // Cache result for 12 hours
+        set_transient('post_sets_has_shortcode', !empty($has_shortcode), 12 * HOUR_IN_SECONDS);
+    }
 
-    if (!empty($posts)) {
+    if ($has_shortcode) {
         wp_enqueue_style(
             'post-sets-style', 
             plugin_dir_url(__FILE__) . 'post-sets.css', 
@@ -58,6 +63,14 @@ function post_sets_scripts_styles() {
     }
 }
 add_action('wp_enqueue_scripts', 'post_sets_scripts_styles');
+
+// Refresh transient when post is saved
+function post_sets_refresh_shortcode_transient($post_id) {
+    if (!wp_is_post_revision($post_id)) {
+        delete_transient('post_sets_has_shortcode');
+    }
+}
+add_action('save_post', 'post_sets_refresh_shortcode_transient');
 
 function post_sets_enqueue_media_scripts($hook) {
     // Only enqueue on taxonomy edit or add screens for 'post_set'
@@ -189,23 +202,23 @@ function add_post_set_image_field( $term ) {
 
 function save_post_set_image($term_id) {
     // Check if nonce is set and verified
-    if ( isset( $_POST['post_set_image'] ) ) {
-    update_term_meta(
-        $term_id,
-        'post_set_image',
-        absint( wp_unslash( $_POST['post_set_image'] ) )
-    );
-}
+    if (!isset($_POST['post_set_image_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['post_set_image_nonce'])), 'post_set_image_action')) {
+        return;
+    }
 
     if (isset($_POST['post_set_image'])) {
-        update_term_meta($term_id, 'post_set_image', absint($_POST['post_set_image']));
+        update_term_meta(
+            $term_id,
+            'post_set_image',
+            absint(wp_unslash($_POST['post_set_image']))
+        );
     }
 }
 
 add_action('edited_post_set', 'save_post_set_image', 10, 1);
 add_action('create_post_set', 'save_post_set_image', 10, 1);
 
-// 3. Episode Number Metabox (same as before)
+// 3. Episode Number Metabox
 add_action('add_meta_boxes', 'add_episode_number_metabox');
 function add_episode_number_metabox() {
     add_meta_box(
@@ -227,20 +240,23 @@ add_action('save_post', 'save_episode_number');
 
 function save_episode_number($post_id) {
     if (
-    ! isset( $_POST['episode_nonce'] ) ||
-    ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['episode_nonce'] ) ), 'save_episode_number' )
-) {
-    return;
-}
+        !isset($_POST['episode_nonce']) ||
+        !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['episode_nonce'])), 'save_episode_number')
+    ) {
+        return;
+    }
     
-    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
     
-    if ( isset( $_POST['episode_number'] ) ) {
-    update_post_meta(
-        $post_id,
-        'episode_number',
-        absint( wp_unslash( $_POST['episode_number'] ) )
-    );
+    if (isset($_POST['episode_number'])) {
+        update_post_meta(
+            $post_id,
+            'episode_number',
+            absint(wp_unslash($_POST['episode_number']))
+        );
+    }
 }
 
 // 4. Display Episode Message
@@ -251,23 +267,15 @@ function add_episode_to_title($title, $post_id) {
         if ($terms && !is_wp_error($terms)) {
             $term = reset($terms);
             
-            // Count posts in this specific Post Set
-	    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Used intentionally, acceptable for small datasets.
-            $query = new WP_Query([
-                'post_type' => 'post',
-                'tax_query' => [[
-                    'taxonomy' => 'post_set',
-                    'field' => 'id',
-                    'terms' => $term->term_id
-                ]],
-                'posts_per_page' => -1
-            ]);
-            $total_posts = $query->post_count;
+            // Use WP_Term_Query instead of WP_Query for more efficient term counting
+            $term_id = $term->term_id;
+            $total_posts = get_term($term_id)->count;
             
+            // Get episode number for current post
             $current = get_post_meta($post_id, 'episode_number', true);
             
             // Ensure current is not greater than total
-            $current = min($current, $total_posts);
+            $current = $current ? min((int)$current, $total_posts) : 1;
             
             $episode_info = sprintf(
                 '<h3 class="episode-subtitle">%s</h3>',
@@ -384,16 +392,16 @@ function post_sets_docs_page_callback() {
 
         <h2>Using and Customizing the Archive Template</h2>
         <p>
-			To use the template (located in the <code>templates/taxonomy-post_set.php</code> file), copy it to your theme root folder. That way, in case the plugin gets updated it is not overwritten.
+            To use the template (located in the <code>templates/taxonomy-post_set.php</code> file), copy it to your theme root folder. That way, in case the plugin gets updated it is not overwritten.
             The specific template included into the plugin is adapted to work with MH Magazine Lite Theme, to make it work with the theme you are using on your website you need to make a copy of the <code>archive.php</code> template in your theme, name it <code>taxonomy-post_set.php</code> and include the custom functionalities of the <code>taxonomy-post_set.php</code> archive you find into the plugin templates folder into it (you can ask an AI to do this adaptation to the archive template for you if you are not confident to do it yourself). Keep in mind the theme first checks if there is a specific template that caters to the Post Set taxonomy into itself first, and then falls back to the templates folder of the plugin if it is not able to find a suitable archive template.
         </p>
         <p>
             The template uses a custom query to fetch posts in the current post set, ordered by the <code>episode_number</code> meta key.
             You can modify the query or the HTML markup to better suit your needs.
         </p>
-	<p>
-		You can also use the shortcode <code>[post_sets_menu]</code> on any post, page or template (if on a template you will have to use the <code>do_shortcode()</code> function to make it work) in your site to show a list of Post Sets.
-		</p>	
+        <p>
+            You can also use the shortcode <code>[post_sets_menu]</code> on any post, page or template (if on a template you will have to use the <code>do_shortcode()</code> function to make it work) in your site to show a list of Post Sets.
+        </p>    
 
         <h2>Support & Donations</h2>
         <p>If you find this plugin useful and want to support its development, please consider making a donation. Your support is greatly appreciated!</p>
