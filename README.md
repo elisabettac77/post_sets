@@ -1,25 +1,14 @@
-/**
- * -----------------------------------------------------------------------------
- * Plugin Name:  Post Sets Manager
- * Description:  Manages post sets with featured images and episode tracking.
- * Version:      1.0
- * Author:       Elisabetta Carrara
- * Author URI:   https://elica-webservices.it/
- * Plugin URI:   https://elica-webservices.it/
- * Text Domain:  post-sets
- * Requires PHP: 8.0
- * Requires CP:  2.0
- * -----------------------------------------------------------------------------
- * This is free software released under the terms of the General Public License,
- * version 2, or later. It is distributed WITHOUT ANY WARRANTY; without even the
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Full
- * text of the license is available at https://www.gnu.org/licenses/gpl-2.0.txt.
- * -----------------------------------------------------------------------------
- */
- 
-Post Sets Manager ClassicPress Plugin
+Plugin Name:  Post Sets Manager
+Description:  Manages post sets with featured images and episode tracking.
+Version:      1.0
+Author: Elisabetta Carrara Author URI:   https://elica-webservices.it/
+Plugin URI:   https://elica-webservices.it/
+Text Domain:  post-sets
+Requires PHP: 8.0
+Requires CP:  2.0
 
-Post Sets Plugin Documentation
+ 
+Post Sets Manager ClassicPress Plugin Documentation
 
 Welcome to the Post Sets plugin! This page explains how the plugin works and how you can customize it.
 
