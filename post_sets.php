@@ -7,7 +7,7 @@
  * Author:       Elisabetta Carrara
  * Author URI:   https://elica-webservices.it/
  * Plugin URI:   https://elica-webservices.it/
- * Text Domain:  post-sets
+ * Text Domain:  post_sets
  * Requires PHP: 8.0
  * Requires CP:  2.0
  * -----------------------------------------------------------------------------
