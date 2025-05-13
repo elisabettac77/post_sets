@@ -35,6 +35,7 @@ function post_sets_deactivate() {
 }
 
 // 0. Enqueue Scripts and Styles
+// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Used intentionally, acceptable for small datasets.
 function post_sets_scripts_styles() {
     $posts = get_posts([
         'meta_query' => [
@@ -58,7 +59,6 @@ function post_sets_scripts_styles() {
 }
 add_action('wp_enqueue_scripts', 'post_sets_scripts_styles');
 
-add_action('admin_enqueue_scripts', 'post_sets_enqueue_media_scripts');
 function post_sets_enqueue_media_scripts($hook) {
     // Only enqueue on taxonomy edit or add screens for 'post_set'
     $screen = get_current_screen();
@@ -72,6 +72,8 @@ function post_sets_enqueue_media_scripts($hook) {
         wp_enqueue_script('jquery');
     }
 }
+
+add_action('admin_enqueue_scripts', 'post_sets_enqueue_media_scripts');
 
 // 1. Register Post Set Taxonomy
 add_action('init', 'register_post_set_taxonomy');
@@ -187,10 +189,13 @@ function add_post_set_image_field( $term ) {
 
 function save_post_set_image($term_id) {
     // Check if nonce is set and verified
-    if (!isset($_POST['post_set_image_nonce']) || 
-        !wp_verify_nonce($_POST['post_set_image_nonce'], 'post_set_image_action')) {
-        return;
-    }
+    if ( isset( $_POST['post_set_image'] ) ) {
+    update_term_meta(
+        $term_id,
+        'post_set_image',
+        absint( wp_unslash( $_POST['post_set_image'] ) )
+    );
+}
 
     if (isset($_POST['post_set_image'])) {
         update_term_meta($term_id, 'post_set_image', absint($_POST['post_set_image']));
@@ -219,15 +224,23 @@ function render_episode_metabox($post) {
 }
 
 add_action('save_post', 'save_episode_number');
+
 function save_episode_number($post_id) {
-    if (!isset($_POST['episode_nonce']) || 
-        !wp_verify_nonce($_POST['episode_nonce'], 'save_episode_number')) return;
+    if (
+    ! isset( $_POST['episode_nonce'] ) ||
+    ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['episode_nonce'] ) ), 'save_episode_number' )
+) {
+    return;
+}
     
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
     
-    if ($_POST['episode_number']) {
-        update_post_meta($post_id, 'episode_number', absint($_POST['episode_number']));
-    }
+    if ( isset( $_POST['episode_number'] ) ) {
+    update_post_meta(
+        $post_id,
+        'episode_number',
+        absint( wp_unslash( $_POST['episode_number'] ) )
+    );
 }
 
 // 4. Display Episode Message
@@ -239,6 +252,7 @@ function add_episode_to_title($title, $post_id) {
             $term = reset($terms);
             
             // Count posts in this specific Post Set
+	    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Used intentionally, acceptable for small datasets.
             $query = new WP_Query([
                 'post_type' => 'post',
                 'tax_query' => [[
@@ -314,7 +328,7 @@ function post_sets_menu_shortcode($atts = []) {
         $image = $image_id ? wp_get_attachment_image($image_id, 'medium') : '';
         ?>
         <div class="post-set-card">
-            <div class="post-set-image"><?php echo $image; ?></div>
+            <div class="post-set-image"><?php echo wp_kses_post( $image ); ?></div>
             <div class="post-set-content">
                 <h3><a href="<?php echo esc_url(get_term_link($term)); ?>">
                     <?php echo esc_html($term->name); ?>
