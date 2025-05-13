@@ -365,7 +365,7 @@ function post_sets_docs_page_callback() {
         </p>
 
         <h2>Contact & Feedback</h2>
-        <p>If you have any questions or suggestions, feel free to contact me or open an issue on the plugin’s repository.</p>
+        <p>If you have any questions or suggestions, feel free to open an issue on the plugin's <a href="https://github.com/elisabettac77/post_sets" target="_blank">Repository</a>.</p>
     </div>
     <?php
 }
