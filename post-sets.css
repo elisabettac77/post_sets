@@ -1,0 +1,35 @@
+.post-set-card {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.episode-info {
+    display: block;
+    font-size: 0.8em;
+    color: #666;
+}
+
+.hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: #f8f9fa;
+}
+
+.episode-subtitle {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
+    font-weight: normal;
+    text-align: center; /* Optional: center the subtitle */
+}
+
+.episode-subtitle a {
+    color: #007bff; /* Optional: style the set link */
+    text-decoration: none;
+}
+
+.episode-subtitle a:hover {
+    text-decoration: underline;
+}
