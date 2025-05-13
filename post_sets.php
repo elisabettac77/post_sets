@@ -305,12 +305,17 @@ function custom_post_set_template($template) {
         // Otherwise load plugin template
         $plugin_template = plugin_dir_path(__FILE__) . 'templates/taxonomy-post_set.php';
         if (file_exists($plugin_template)) {
-            return $plugin_template;
+            // Get the current term ID
+            $current_term = get_queried_object();
+            $posts = post_sets_get_posts_by_post_set($current_term->term_id);
+
+            // Pass the posts to the template
+            include($plugin_template); // Include, not return
+            return; // важно чтобы template_include не отработал дальше и не подключил шаблон по умолчанию
         }
     }
     return $template;
 }
-
 /**
  * Retrieves posts for a given post set, ordered by episode number.
  *
