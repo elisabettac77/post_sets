@@ -325,31 +325,36 @@ function custom_post_set_template($template) {
 function post_sets_get_posts_by_post_set($term_id) {
     global $wpdb;
 
-    $term_taxonomy_id = get_term_by('id', $term_id, 'post_set')->term_taxonomy_id;
+    $term = get_term_by('id', $term_id, 'post_set');
+    if (!$term) {
+        return [];
+    }
+    $term_taxonomy_id = $term->term_taxonomy_id;
 
-    $post_id_sql = $wpdb->prepare(
-        "SELECT p.ID
-         FROM {$wpdb->posts} p
-         INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-         WHERE tr.term_taxonomy_id = %d
-         AND p.post_type = 'post'
-         AND p.post_status = 'publish'",
-        $term_taxonomy_id
+    $current_post_ids = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT p.ID
+             FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+             WHERE tr.term_taxonomy_id = %d
+             AND p.post_type = 'post'
+             AND p.post_status = 'publish'",
+            $term_taxonomy_id
+        )
     );
-    $current_post_ids = $wpdb->get_col($post_id_sql);
 
     if (empty($current_post_ids)) {
-        return []; // Return empty array for no posts
+        return [];
     }
 
-    $placeholder_string = implode(',', array_fill(0, count($current_post_ids), '%d'));
-    $meta_sql = $wpdb->prepare(
-        "SELECT post_id, meta_value
-         FROM {$wpdb->postmeta}
-         WHERE meta_key = %s AND post_id IN ($placeholder_string)",
-        'episode_number',
-        ...$current_post_ids
-    );
+    $placeholders = implode(',', array_fill(0, count($current_post_ids), '%d'));
+    $sql = "SELECT post_id, meta_value
+            FROM {$wpdb->postmeta}
+            WHERE meta_key = %s AND post_id IN ($placeholders)";
+
+    $params = array_merge(['episode_number'], $current_post_ids);
+    $meta_sql = $wpdb->prepare($sql, ...$params);
+
     $meta_results = $wpdb->get_results($meta_sql, ARRAY_A);
 
     $episode_numbers = [];
@@ -366,7 +371,7 @@ function post_sets_get_posts_by_post_set($term_id) {
 
     $posts = get_posts([
         'post__in' => $sorted_post_ids,
-        'orderby' => 'post__in', // Preserve the order from $sorted_post_ids
+        'orderby' => 'post__in',
         'posts_per_page' => -1,
         'post_type' => 'post',
         'ignore_sticky_posts' => true,
