@@ -77,7 +77,7 @@ function post_sets_enqueue_media_scripts($hook) {
 add_action('init', 'register_post_set_taxonomy');
 function register_post_set_taxonomy() {
     register_taxonomy('post_set', 'post', [
-        'label' => __('Post Sets', 'post-sets'),
+        'label' => __('Post Sets', 'post_sets'),
         'hierarchical' => false,
         'public' => true,
         'show_in_rest' => true,
@@ -89,9 +89,9 @@ function register_post_set_taxonomy() {
         ],
         'rewrite' => ['slug' => 'post-set'],
         'labels' => [
-            'name' => __('Post Sets', 'post-sets'),
-            'add_new_item' => __('Add New Post Set', 'post-sets'),
-            'edit_item' => __('Edit Post Set', 'post-sets')
+            'name' => __('Post Sets', 'post_sets'),
+            'add_new_item' => __('Add New Post Set', 'post_sets'),
+            'edit_item' => __('Edit Post Set', 'post_sets')
         ]
     ]);
 }
@@ -100,60 +100,85 @@ function register_post_set_taxonomy() {
 add_action('post_set_edit_form_fields', 'add_post_set_image_field', 10, 2);
 add_action('post_set_add_form_fields', 'add_post_set_image_field');
 
-function add_post_set_image_field($term) {
-	wp_nonce_field('post_set_image_action', 'post_set_image_nonce');
+function add_post_set_image_field( $term ) {
     // If $term is not an object, get the term object
-    if (!is_object($term)) {
-        $term = get_term($term, 'post_set');
+    if ( ! is_object( $term ) ) {
+        $term = get_term( $term, 'post_set' );
     }
-    if (!$term || is_wp_error($term)) {
+    if ( ! $term || is_wp_error( $term ) ) {
         return; // Bail if invalid term
     }
 
-    $image_id = get_term_meta($term->term_id, 'post_set_image', true);
+    // Output nonce field once per form, ideally outside this function if possible
+    wp_nonce_field( 'post_set_image_action', 'post_set_image_nonce' );
+
+    $image_id = get_term_meta( $term->term_id, 'post_set_image', true );
     ?>
     <tr class="form-field">
-        <th scope="row" valign="top"><label><?php _e('Featured Image', 'post-sets'); ?></label></th>
+        <th scope="row" valign="top">
+            <label for="post_set_image"><?php echo esc_html__( 'Featured Image', 'post_sets' ); ?></label>
+        </th>
         <td>
-            <?php if ($image_id) : ?>
-                <?php echo wp_get_attachment_image($image_id, 'thumbnail'); ?>
-                <input type="hidden" name="post_set_image" value="<?php echo esc_attr($image_id); ?>">
-                <button class="button remove-post-set-image"><?php _e('Remove image', 'post-sets'); ?></button>
+            <?php if ( $image_id ) : 
+                $image_html = wp_get_attachment_image( $image_id, 'thumbnail' );
+                // wp_get_attachment_image() returns safe HTML, but better to allow only safe tags
+                echo wp_kses_post( $image_html );
+            ?>
+                <input type="hidden" name="post_set_image" id="post_set_image" value="<?php echo esc_attr( $image_id ); ?>">
+                <button type="button" class="button remove-post-set-image"><?php echo esc_html__( 'Remove image', 'post_sets' ); ?></button>
             <?php else : ?>
-                <input type="hidden" name="post_set_image" value="">
-                <button class="button add-post-set-image"><?php _e('Add image', 'post-sets'); ?></button>
+                <input type="hidden" name="post_set_image" id="post_set_image" value="">
+                <button type="button" class="button add-post-set-image"><?php echo esc_html__( 'Add image', 'post_sets' ); ?></button>
             <?php endif; ?>
-            <script>
-                jQuery(document).ready(function($){
-                    var frame;
-                    $('.add-post-set-image').on('click', function(e) {
-                        e.preventDefault();
-                        if (frame) {
-                            frame.open();
-                            return;
-                        }
-                        frame = wp.media({
-                            title: 'Select or Upload Media Of Choice',
-                            button: { text: 'Use this media' },
-                            multiple: false
-                        });
-                        frame.on('select', function() {
-                            var attachment = frame.state().get('selection').first().toJSON();
-                            $('input[name="post_set_image"]').val(attachment.id);
-                            $('.add-post-set-image').before('<img src="'+attachment.url+'" style="max-width:100px;">');
-                            $('.add-post-set-image').hide();
-                            $('.remove-post-set-image').show();
-                        });
+
+            <script type="text/javascript">
+            jQuery(document).ready(function($){
+                var frame;
+                $('.add-post-set-image').on('click', function(e) {
+                    e.preventDefault();
+
+                    if (frame) {
                         frame.open();
+                        return;
+                    }
+
+                    frame = wp.media({
+                        title: '<?php echo esc_js( __( 'Select or Upload Media Of Choice', 'post_sets' ) ); ?>',
+                        button: { text: '<?php echo esc_js( __( 'Use this media', 'post_sets' ) ); ?>' },
+                        multiple: false
                     });
-                    $('.remove-post-set-image').on('click', function(e) {
-                        e.preventDefault();
-                        $('input[name="post_set_image"]').val('');
-                        $(this).prev('img').remove();
-                        $(this).hide();
-                        $('.add-post-set-image').show();
+
+                    frame.on('select', function() {
+                        var attachment = frame.state().get('selection').first().toJSON();
+                        $('#post_set_image').val(attachment.id);
+
+                        // Remove any existing image preview
+                        $('.remove-post-set-image').prev('img').remove();
+
+                        // Insert new image preview before the add button
+                        $('.add-post-set-image').before('<img src="'+attachment.url+'" style="max-width:100px;" alt="<?php echo esc_js( esc_attr__( 'Selected image', 'post_sets' ) ); ?>">');
+
+                        $('.add-post-set-image').hide();
+                        $('.remove-post-set-image').show();
                     });
+
+                    frame.open();
                 });
+
+                $('.remove-post-set-image').on('click', function(e) {
+                    e.preventDefault();
+
+                    $('#post_set_image').val('');
+                    $(this).prev('img').remove();
+                    $(this).hide();
+                    $('.add-post-set-image').show();
+                });
+
+                // On page load, hide remove button if no image
+                if ( ! $('#post_set_image').val() ) {
+                    $('.remove-post-set-image').hide();
+                }
+            });
             </script>
         </td>
     </tr>
@@ -180,7 +205,7 @@ add_action('add_meta_boxes', 'add_episode_number_metabox');
 function add_episode_number_metabox() {
     add_meta_box(
         'episode_number',
-        __('Episode Information', 'post-sets'),
+        __('Episode Information', 'post_sets'),
         'render_episode_metabox',
         'post',
         'side'
@@ -233,7 +258,7 @@ function add_episode_to_title($title, $post_id) {
             $episode_info = sprintf(
                 '<h3 class="episode-subtitle">%s</h3>',
                 sprintf(
-                    __('Episode %1$d of %2$d in the %3$s set', 'post-sets'),
+                    __('Episode %1$d of %2$d in the %3$s set', 'post_sets'),
                     $current,
                     $total_posts,
                     '<a href="'.esc_url(get_term_link($term)).'">'.$term->name.'</a>'
