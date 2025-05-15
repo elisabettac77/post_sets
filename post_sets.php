@@ -207,63 +207,43 @@ function post_sets_menu_shortcode($atts = []) {
 // 6. Retrieve Posts by Post Set (Improved Function)
 // -----------------------------------------------------------------------------
 
+/**
+ * Retrieve all posts in a given post set, ordered by episode number (ascending).
+ *
+ * @param int $term_id The term ID of the post set.
+ * @return WP_Post[] Array of posts in the set, sorted by episode number.
+ */
 function post_sets_get_posts_by_post_set( $term_id ) {
-    global $wpdb;
-    
-    $term_id = (int) $term_id;
+    $term_id = absint( $term_id );
+    if ( ! $term_id ) {
+        return [];
+    }
+
+    // Check if the term exists in 'post_set' taxonomy
     $term = get_term_by( 'id', $term_id, 'post_set' );
-    
-    if ( ! $term ) {
+    if ( ! $term || is_wp_error( $term ) ) {
         return [];
     }
 
-    $current_post_ids = $wpdb->get_col(
-        $wpdb->prepare(
-            "SELECT p.ID
-             FROM {$wpdb->posts} p
-             INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-             WHERE tr.term_taxonomy_id = %d
-             AND p.post_type = %s
-             AND p.post_status = %s",
-            $term->term_taxonomy_id,
-            'post',
-            'publish'
-        )
-    );
-
-    if ( empty( $current_post_ids ) ) {
-        return [];
-    }
-
-    $current_post_ids = array_map( 'absint', $current_post_ids );
-    $placeholders = implode( ',', array_fill( 0, count( $current_post_ids ), '%d' ) );
-    $meta_key = sanitize_key( 'episode_number' );
-
-    $query = $wpdb->prepare(
-        "SELECT post_id, meta_value
-         FROM {$wpdb->postmeta}
-         WHERE meta_key = %s AND post_id IN ($placeholders)",
-        array_merge( [ $meta_key ], $current_post_ids )
-    );
-
-    $meta_results = $wpdb->get_results( $query, ARRAY_A );
-    $episode_numbers = [];
-
-    foreach ( $meta_results as $row ) {
-        $episode_numbers[ $row['post_id'] ] = (int) $row['meta_value'];
-    }
-
-    usort( $current_post_ids, function ( $a, $b ) use ( $episode_numbers ) {
-        return ( $episode_numbers[ $a ] ?? 0 ) - ( $episode_numbers[ $b ] ?? 0 );
-    } );
-
-    return get_posts([
-        'post__in'            => $current_post_ids,
-        'orderby'             => 'post__in',
-        'posts_per_page'      => -1,
+    $args = [
         'post_type'           => 'post',
+        'posts_per_page'      => -1,
+        'post_status'         => 'publish',
+        'tax_query'           => [
+            [
+                'taxonomy' => 'post_set',
+                'field'    => 'term_id',
+                'terms'    => $term_id,
+            ],
+        ],
+        'meta_key'            => 'episode_number',
+        'orderby'             => 'meta_value_num',
+        'order'               => 'ASC',
         'ignore_sticky_posts' => true,
-    ]);
+    ];
+// phpcs:disable WordPress.DB.SlowDBQuery
+    return get_posts( $args );
+// phpcs:enable WordPress.DB.SlowDBQuery
 }
 
 // Hook to add admin menu
@@ -290,8 +270,8 @@ function post_sets_docs_page_callback() {
 
         <h2>How It Works</h2>
         <p>
-            The plugin creates a custom taxonomy called <code>post_set</code> that allows you to group posts into sets. This taxonomy behaves like a tag and allows you to upload a featured image to identify it.
-            It also provides a custom archive template to display all posts in a selected post set, ordered by a custom meta field <code>episode_number</code> and shows a subtitle under a single post title to show episode number and a link to the post set.
+            The plugin creates a custom taxonomy called <code>post_set</code> that allows you to group posts into sets. This taxonomy behaves like a Tag and allows you to upload a featured image to identify it.
+            It also provides a custom archive template displaying all posts in a selected post set, ordered by a custom meta key <code>episode_number</code> and shows a subtitle under a single post title to show episode number and a link to the post set.
         </p>
 
         <h2>Using and Customizing the Archive Template</h2>
