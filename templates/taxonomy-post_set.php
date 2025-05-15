@@ -6,6 +6,10 @@
  */
 
 get_header();
+
+// Fetch the global $wp_query object to access posts in the current query
+global $wp_query;
+$posts = $wp_query->posts;
 ?>
 <div class="mh-wrapper mh-clearfix">
     <div id="main-content" class="mh-loop mh-content" role="main">
@@ -17,8 +21,8 @@ get_header();
             </div>
         </header>
         <?php
-        // Check if $posts is defined and not empty
-        if ( isset( $posts ) && ! empty( $posts ) ) :
+        // Check if $posts is not empty
+        if ( ! empty( $posts ) ) :
             foreach ( $posts as $post ) :
                 setup_postdata( $post ); // Important for using template tags
                 ?>
