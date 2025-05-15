@@ -88,8 +88,8 @@
 
 /* Episode subtitle styling (the one appearing under title) */
 .episode-subtitle, 
-.entry-title small,  /* Target the <small> element inside entry-title */
-.post-title small {  /* Alternative selector for some themes */
+.entry-title p,  /* Target the <small> element inside entry-title */
+.post-title p {  /* Alternative selector for some themes */
     font-size: 1.1rem !important; /* Increased from 0.9rem */
     color: #555;
     margin-top: 0.75rem;
@@ -100,17 +100,17 @@
     padding: 0.5rem 0;
 }
 
-/* Ensure the <br><small> element in add_episode_subtitle() is styled properly */
-.entry-title small,
-.post-title small {
+/* Ensure the <br><p> element in add_episode_subtitle() is styled properly */
+.entry-title p,
+.post-title p {
     display: block;
     margin-top: 0.75rem;
 }
 
 /* Style links in episode subtitles */
 .episode-subtitle a,
-.entry-title small a,
-.post-title small a {
+.entry-title p a,
+.post-title p a {
     color: #007bff;
     text-decoration: none;
     font-weight: 500;
@@ -118,8 +118,8 @@
 }
 
 .episode-subtitle a:hover,
-.entry-title small a:hover,
-.post-title small a:hover {
+.entry-title p a:hover,
+.post-title p a:hover {
     text-decoration: underline;
     color: #0056b3;
 }
@@ -135,8 +135,8 @@
     }
     
     .episode-subtitle,
-    .entry-title small,
-    .post-title small {
+    .entry-title p,
+    .post-title p {
         font-size: 1rem !important;
     }
 }
