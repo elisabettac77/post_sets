@@ -231,12 +231,18 @@ function post_sets_get_posts_by_post_set($term_id) {
         return [];
     }
 
-    $placeholders = implode(',', array_fill(0, count($current_post_ids), '%d'));
-$query = "SELECT post_id, meta_value
-          FROM {$wpdb->postmeta}
-          WHERE meta_key = %s AND post_id IN ($placeholders)";
+   // Ensure $query and $params are properly prepared
+$placeholders = implode(',', array_fill(0, count($current_post_ids), '%d'));
+$query = "
+    SELECT post_id, meta_value
+    FROM {$wpdb->postmeta}
+    WHERE meta_key = %s AND post_id IN ($placeholders)
+";
+
+// Merge parameters for the query
 $params = array_merge(['episode_number'], $current_post_ids);
 
+// Use wpdb->prepare to sanitize the query
 $meta_results = $wpdb->get_results(
     $wpdb->prepare($query, ...$params),
     ARRAY_A
