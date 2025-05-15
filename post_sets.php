@@ -225,6 +225,11 @@ function post_sets_get_posts_by_post_set( $term_id ) {
         return [];
     }
 
+    /**
+     * phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_tax_query, WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+     * The following query uses tax_query and meta_key for ordering, which may be slow on very large datasets.
+     * This is intentional and necessary for correct functionality in this context.
+     */
     $args = [
         'post_type'           => 'post',
         'posts_per_page'      => -1,
@@ -241,9 +246,10 @@ function post_sets_get_posts_by_post_set( $term_id ) {
         'order'               => 'ASC',
         'ignore_sticky_posts' => true,
     ];
-// phpcs:disable WordPress.DB.SlowDBQuery
-    return get_posts( $args );
-// phpcs:enable WordPress.DB.SlowDBQuery
+    $posts = get_posts( $args );
+    // phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_tax_query, WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+
+    return $posts;
 }
 
 // Hook to add admin menu
