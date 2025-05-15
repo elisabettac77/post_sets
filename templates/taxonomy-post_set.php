@@ -26,20 +26,26 @@ $queried_posts = $wp_query->posts; // Use a custom variable
             foreach ( $queried_posts as $queried_post ) :
                 setup_postdata( $queried_post ); // Use the custom variable
                 ?>
-                <article id="post-<?php echo $queried_post->ID; ?>" <?php post_class(); ?>>
-                    <?php
-                    if ( has_post_thumbnail() ) {
-                        the_post_thumbnail( 'medium' );
-                    }
-                    ?>
-                    <h2 class="entry-title"><a href="<?php echo get_permalink( $queried_post->ID ); ?>"><?php echo esc_html( get_the_title( $queried_post->ID ) ); ?></a></h2>
-                    <div class="meta">
-                        <time datetime="<?php echo esc_attr( get_the_date( 'c', $queried_post->ID ) ); ?>"><?php echo esc_html( get_the_date( '', $queried_post->ID ) ); ?></time>
-                    </div>
-                    <div class="entry-summary">
-                        <?php echo esc_html( get_the_excerpt( $queried_post->ID ) ); ?>
-                    </div>
-                </article>
+                <article id="post-<?php echo esc_attr( $queried_post->ID ); ?>" <?php post_class(); ?>>
+    <?php
+    if ( has_post_thumbnail() ) {
+        the_post_thumbnail( 'medium' );
+    }
+    ?>
+    <h2 class="entry-title">
+        <a href="<?php echo esc_url( get_permalink( $queried_post->ID ) ); ?>">
+            <?php echo esc_html( get_the_title( $queried_post->ID ) ); ?>
+        </a>
+    </h2>
+    <div class="meta">
+        <time datetime="<?php echo esc_attr( get_the_date( 'c', $queried_post->ID ) ); ?>">
+            <?php echo esc_html( get_the_date( '', $queried_post->ID ) ); ?>
+        </time>
+    </div>
+    <div class="entry-summary">
+        <?php echo esc_html( get_the_excerpt( $queried_post->ID ) ); ?>
+    </div>
+</article>
                 <?php
             endforeach;
             wp_reset_postdata();
