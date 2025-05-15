@@ -216,12 +216,12 @@ function add_episode_subtitle( $title, $post_id ) {
         $episode_number = get_post_meta( $post_id, '_episode_number', true );
         $post_set = wp_get_post_terms( $post_id, 'post_set', [ 'fields' => 'names' ] );
         if ( $episode_number && $post_set ) {
-            $title .= '<br><small>' . sprintf(
+            $title .= '<br><p>' . sprintf(
                 /* translators: 1: Episode number, 2: Post set name(s) */
                 esc_html__( 'This is episode %1$s in the set %2$s.', 'post_sets' ),
                 esc_html( $episode_number ),
                 esc_html( implode( ', ', $post_set ) )
-            ) . '</small>';
+            ) . '</p>';
         }
     }
     return $title;
