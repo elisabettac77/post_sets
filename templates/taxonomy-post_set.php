@@ -7,11 +7,12 @@
 
 get_header();
 
-$term = get_queried_object();
-$term_id = isset( $term->term_id ) ? (int) $term->term_id : 0;
+// Get the current post_set term object (do not assign to $term)
+$current_post_set = get_queried_object();
+$term_id = isset( $current_post_set->term_id ) ? (int) $current_post_set->term_id : 0;
 
-// Fetch posts in this post set, ordered by episode number.
-$queried_posts = ( $term_id ) ? post_sets_get_posts_by_post_set( $term_id ) : [];
+// Use your plugin's function to get posts in this set
+$post_set_posts = ( $term_id ) ? post_sets_get_posts_by_post_set( $term_id ) : [];
 
 ?>
 <div class="mh-wrapper mh-clearfix">
@@ -29,9 +30,10 @@ $queried_posts = ( $term_id ) ? post_sets_get_posts_by_post_set( $term_id ) : []
             </div>
         </header>
         <?php
-        if ( ! empty( $queried_posts ) ) :
-            foreach ( $queried_posts as $post ) :
-                setup_postdata( $post );
+        if ( ! empty( $post_set_posts ) ) :
+            foreach ( $post_set_posts as $single_post ) :
+                // Setup global $post for template tags
+                setup_postdata( $single_post );
                 ?>
                 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
                     <?php
