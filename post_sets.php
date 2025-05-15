@@ -207,11 +207,13 @@ function post_sets_menu_shortcode($atts = []) {
 // 6. Retrieve Posts by Post Set (Improved Function)
 // -----------------------------------------------------------------------------
 
-function post_sets_get_posts_by_post_set($term_id) {
+function post_sets_get_posts_by_post_set( $term_id ) {
     global $wpdb;
-
-    $term = get_term_by('id', $term_id, 'post_set');
-    if (!$term) {
+    
+    $term_id = (int) $term_id;
+    $term = get_term_by( 'id', $term_id, 'post_set' );
+    
+    if ( ! $term ) {
         return [];
     }
 
@@ -221,50 +223,45 @@ function post_sets_get_posts_by_post_set($term_id) {
              FROM {$wpdb->posts} p
              INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
              WHERE tr.term_taxonomy_id = %d
-             AND p.post_type = 'post'
-             AND p.post_status = 'publish'",
-            $term->term_taxonomy_id
+             AND p.post_type = %s
+             AND p.post_status = %s",
+            $term->term_taxonomy_id,
+            'post',
+            'publish'
         )
     );
 
-    if (empty($current_post_ids)) {
+    if ( empty( $current_post_ids ) ) {
         return [];
     }
 
-   // Ensure $query and $params are properly prepared
-$placeholders = implode(',', array_fill(0, count($current_post_ids), '%d'));
-$query = "
-    SELECT post_id, meta_value
-    FROM {$wpdb->postmeta}
-    WHERE meta_key = %s AND post_id IN ($placeholders)
-";
+    $current_post_ids = array_map( 'absint', $current_post_ids );
+    $placeholders = implode( ',', array_fill( 0, count( $current_post_ids ), '%d' ) );
+    $meta_key = sanitize_key( 'episode_number' );
 
-// Merge parameters for the query
-$params = array_merge(['episode_number'], $current_post_ids);
+    $query = $wpdb->prepare(
+        "SELECT post_id, meta_value
+         FROM {$wpdb->postmeta}
+         WHERE meta_key = %s AND post_id IN ($placeholders)",
+        array_merge( [ $meta_key ], $current_post_ids )
+    );
 
-// Use wpdb->prepare to sanitize the query
-$meta_results = $wpdb->get_results(
-    $wpdb->prepare($query, ...$params),
-    ARRAY_A
-);
-
+    $meta_results = $wpdb->get_results( $query, ARRAY_A );
     $episode_numbers = [];
-    foreach ($meta_results as $row) {
-        $episode_numbers[$row['post_id']] = (int)$row['meta_value'];
+
+    foreach ( $meta_results as $row ) {
+        $episode_numbers[ $row['post_id'] ] = (int) $row['meta_value'];
     }
 
-    $sorted_post_ids = $current_post_ids;
-    usort($sorted_post_ids, function ($a, $b) use ($episode_numbers) {
-        $a_episode = $episode_numbers[$a] ?? 0;
-        $b_episode = $episode_numbers[$b] ?? 0;
-        return $a_episode - $b_episode;
-    });
+    usort( $current_post_ids, function ( $a, $b ) use ( $episode_numbers ) {
+        return ( $episode_numbers[ $a ] ?? 0 ) - ( $episode_numbers[ $b ] ?? 0 );
+    } );
 
     return get_posts([
-        'post__in' => $sorted_post_ids,
-        'orderby' => 'post__in',
-        'posts_per_page' => -1,
-        'post_type' => 'post',
+        'post__in'            => $current_post_ids,
+        'orderby'             => 'post__in',
+        'posts_per_page'      => -1,
+        'post_type'           => 'post',
         'ignore_sticky_posts' => true,
     ]);
 }
