@@ -115,6 +115,42 @@ function save_post_set_image($term_id) {
     }
 }
 
+add_action('add_meta_boxes', 'add_episode_number_metabox');
+function add_episode_number_metabox() {
+    add_meta_box(
+        'episode_number', 
+        __('Episode Number', 'post_sets'), 
+        'render_episode_number_metabox', 
+        'post', 
+        'side'
+    );
+}
+
+function render_episode_number_metabox($post) {
+    $value = get_post_meta($post->ID, '_episode_number', true);
+    echo '<label for="episode_number">' . __('Enter Episode Number:', 'post_sets') . '</label>';
+    echo '<input type="number" name="episode_number" value="' . esc_attr($value) . '" />';
+}
+
+add_action('save_post', 'save_episode_number_metabox');
+function save_episode_number_metabox($post_id) {
+    if (isset($_POST['episode_number'])) {
+        update_post_meta($post_id, '_episode_number', absint($_POST['episode_number']));
+    }
+}
+
+add_filter('the_title', 'add_episode_subtitle', 10, 2);
+function add_episode_subtitle($title, $post_id) {
+    if (is_single($post_id)) {
+        $episode_number = get_post_meta($post_id, '_episode_number', true);
+        $post_set = wp_get_post_terms($post_id, 'post_set', ['fields' => 'names']);
+        if ($episode_number && $post_set) {
+            $title .= '<br><small>' . sprintf(__('This is episode %s in the set %s.', 'post_sets'), $episode_number, implode(', ', $post_set)) . '</small>';
+        }
+    }
+    return $title;
+}
+
 // -----------------------------------------------------------------------------
 // 4. Enqueue Scripts and Styles
 // -----------------------------------------------------------------------------
