@@ -232,15 +232,15 @@ function post_sets_get_posts_by_post_set($term_id) {
     }
 
     $placeholders = implode(',', array_fill(0, count($current_post_ids), '%d'));
-    $meta_results = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT post_id, meta_value
-             FROM {$wpdb->postmeta}
-             WHERE meta_key = %s AND post_id IN ($placeholders)",
-            array_merge(['episode_number'], $current_post_ids)
-        ),
-        ARRAY_A
-    );
+$query = "SELECT post_id, meta_value
+          FROM {$wpdb->postmeta}
+          WHERE meta_key = %s AND post_id IN ($placeholders)";
+$params = array_merge(['episode_number'], $current_post_ids);
+
+$meta_results = $wpdb->get_results(
+    $wpdb->prepare($query, ...$params),
+    ARRAY_A
+);
 
     $episode_numbers = [];
     foreach ($meta_results as $row) {
