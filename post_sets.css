@@ -1,35 +1,182 @@
+/* Post Sets Plugin Styles */
+
+/* Card layout for post sets menu */
 .post-set-card {
     display: grid;
     grid-template-columns: 200px 1fr;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.episode-info {
+.post-set-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.post-set-image {
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.post-set-image img {
     display: block;
-    font-size: 0.8em;
-    color: #666;
+    width: 100%;
+    height: auto;
+    transition: transform 0.3s ease;
 }
 
+.post-set-card:hover .post-set-image img {
+    transform: scale(1.05);
+}
+
+.post-set-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.post-set-content h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.4rem;
+}
+
+.post-set-content h3 a {
+    color: #2c3e50;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.post-set-content h3 a:hover {
+    color: #007bff;
+}
+
+.post-set-content p {
+    margin-top: 0;
+    color: #555;
+    line-height: 1.5;
+}
+
+/* Hero section for archive pages */
 .hero {
     text-align: center;
-    padding: 3rem 1rem;
-    background: #f8f9fa;
+    padding: 3.5rem 1.5rem;
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+    margin-bottom: 2rem;
+    border-radius: 8px;
 }
 
-.episode-subtitle {
-    font-size: 0.9rem;
-    color: #666;
-    margin-top: 0.5rem;
+.hero h1 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+/* Episode information styling */
+.episode-info {
+    display: block;
+    font-size: 0.95em;
+    color: #555;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+/* Episode subtitle styling (the one appearing under title) */
+.episode-subtitle, 
+.entry-title small,  /* Target the <small> element inside entry-title */
+.post-title small {  /* Alternative selector for some themes */
+    font-size: 1.1rem !important; /* Increased from 0.9rem */
+    color: #555;
+    margin-top: 0.75rem;
     font-weight: normal;
-    text-align: center; /* Optional: center the subtitle */
+    text-align: center;
+    display: block;
+    line-height: 1.4;
+    padding: 0.5rem 0;
 }
 
-.episode-subtitle a {
-    color: #007bff; /* Optional: style the set link */
+/* Ensure the <br><small> element in add_episode_subtitle() is styled properly */
+.entry-title small,
+.post-title small {
+    display: block;
+    margin-top: 0.75rem;
+}
+
+/* Style links in episode subtitles */
+.episode-subtitle a,
+.entry-title small a,
+.post-title small a {
+    color: #007bff;
     text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
 }
 
-.episode-subtitle a:hover {
+.episode-subtitle a:hover,
+.entry-title small a:hover,
+.post-title small a:hover {
     text-decoration: underline;
+    color: #0056b3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .post-set-card {
+        grid-template-columns: 1fr;
+    }
+    
+    .post-set-image {
+        margin-bottom: 1rem;
+    }
+    
+    .episode-subtitle,
+    .entry-title small,
+    .post-title small {
+        font-size: 1rem !important;
+    }
+}
+
+/* Post Sets container */
+.post-sets-container {
+    display: grid;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+/* Navigation for episode sets */
+.episode-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid #eee;
+    font-size: 0.95rem;
+}
+
+.episode-navigation a {
+    color: #007bff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s ease;
+}
+
+.episode-navigation a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.prev-episode:before {
+    content: "←";
+    margin-right: 0.5rem;
+}
+
+.next-episode:after {
+    content: "→";
+    margin-left: 0.5rem;
 }
